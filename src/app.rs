@@ -1,11 +1,17 @@
 use eframe::{egui, epi};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
+#[cfg_attr(
+    feature = "persistence",
+    derive(serde::Deserialize, serde::Serialize)
+)]
+// if we add new fields, give them default values when deserializing old state
+#[cfg_attr(feature = "persistence", serde(default))]
 pub struct ScrapApp {
     // Example stuff:
     label: String,
+
+    window: bool,
 
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
@@ -18,6 +24,7 @@ impl Default for ScrapApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            window: false,
         }
     }
 }
@@ -52,7 +59,11 @@ impl epi::App for ScrapApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
-        let Self { label, value } = self;
+        let Self {
+            label,
+            value,
+            window,
+        } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -63,7 +74,10 @@ impl epi::App for ScrapApp {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File", |ui| {
-                    if ui.button("Quit").clicked() {
+                    if ui
+                        .button("Quit")
+                        .clicked()
+                    {
                         frame.quit();
                     }
                 });
@@ -79,15 +93,24 @@ impl epi::App for ScrapApp {
             });
 
             ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
+            if ui
+                .button("Increment")
+                .clicked()
+            {
                 *value += 1.0;
             }
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                ui.add(
-                    egui::Hyperlink::new("https://github.com/emilk/egui/").text("powered by egui"),
-                );
-            });
+            ui.checkbox(window, "Window");
+
+            ui.with_layout(
+                egui::Layout::bottom_up(egui::Align::Center),
+                |ui| {
+                    ui.add(
+                        egui::Hyperlink::new("https://github.com/emilk/egui/")
+                            .text("powered by egui"),
+                    );
+                },
+            );
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -102,7 +125,7 @@ impl epi::App for ScrapApp {
             egui::warn_if_debug_build(ui);
         });
 
-        if false {
+        if *window {
             egui::Window::new("Window").show(ctx, |ui| {
                 ui.label("Windows can be moved by dragging them.");
                 ui.label("They are automatically sized based on contents.");
